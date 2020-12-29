@@ -1,0 +1,32 @@
+***INSTRUCCIONES**
+
+1. Instalar Laragon server
+2. Crear dos sitios en blanco dentro de la carpeta /www en el servidor local Laragon:
+    - Sitio de backend: hotelesapi
+    - Sitio de frontend: hoteles
+3. Copiar todos los archivos del repositorio al Sitio de backend
+4. Renombrar el archivo ".env.example" por ".env"
+5. Copiar el archivo comprimido "FRONTEND" al sitio de frontend y descomprimir
+
+
+
+***AHORA LA BASE DE DATOS***
+
+OPCIÓN 1:
+
+En caso se tenga instalador composer para la consola de comandos:
+1. Abrir CMD o Windows Shell
+2. Dirigirse a la ruta donde se encuentra el sitio backend
+3. Ejecutar los siguientes comandos:
+
+    composer install
+    php artisan migrate:fresh --seed
+    php artisan passport:install
+
+OPCION 2: 
+
+1. Abrir MYSQL Workbench o su IDE de preferencia de base de DATOS
+2. Ejecutar el script del archivo "hoteles_api.sql"
+
+
+¡Y LISTO!
