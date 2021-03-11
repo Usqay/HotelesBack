@@ -58,6 +58,12 @@ use Illuminate\Support\Facades\Route;
 Route::post('login', [PassportAuthController::class, 'login']);
 Route::get('enviroments', [UtilitiesController::class, 'enviroments']);
 Route::get('currency-rates-today/{base}', [UtilitiesController::class, 'currency_rates']);
+Route::get('qr-code', function ()
+{
+  return  QRCode::text('Laravel QR Code Generator!')
+  ->setOutfile('./qr/email-qr-code.png')
+  ->png();
+});
 
 Route::middleware('auth:api')->group(function(){
 
@@ -73,7 +79,7 @@ Route::middleware('auth:api')->group(function(){
     Route::post('room-reserve', [RoomController::class, 'reserve']);
     Route::apiResource('products', ProductController::class);
     Route::apiResource('product-stocks', ProductStockController::class)->only(['index']);
-    
+
     Route::apiResource('services', ServiceController::class);
     Route::apiResource('service-products', ServiceProductController::class)->except(['index', 'show']);
 
@@ -98,7 +104,7 @@ Route::middleware('auth:api')->group(function(){
     Route::apiResource('reservations', ReservationController::class);
 
     Route::apiResource('system-configurations', SystemConfigurationController::class)->only(['index', 'store']);
-    
+
     Route::apiResource('roles', RolesController::class);
     Route::apiResource('permissions', PermissionController::class)->only(['index', 'store']);
     Route::apiResource('users', UserController::class);
@@ -119,6 +125,7 @@ Route::middleware('auth:api')->group(function(){
     Route::post('report-dayli', [ReportsController::class, 'dayli']);
 
     Route::get('dashboard', [DashboardController::class, 'dashboard']);
-    
+    Route::get('data', [DashboardController::class, 'data']);
+
     Route::post('logout', [PassportAuthController::class, 'logout']);
 });

@@ -35,7 +35,7 @@ class ReservationController extends Controller
         if($state){
             $reservations->where('reservation_state_id', '=', $state);
         }
-        
+
         $reservations = $reservations->paginate($paginate);
 
         return ReservationResource::collection($reservations);
@@ -60,9 +60,9 @@ class ReservationController extends Controller
     public function store(ReservationCreateRequest $request)
     {
         try{
-
+           // dd(1234);
             $turnChange = TurnChange::where('status_active', '=', true)->first();
-            
+
             DB::beginTransaction();
 
             $data = $request->all();
@@ -70,12 +70,12 @@ class ReservationController extends Controller
             $data['reservation_state_id'] = 1;
             $data['start_date'] = Carbon::createFromFormat('d/m/Y H:i:s', $request->start_date);
             $data['end_date'] = Carbon::createFromFormat('d/m/Y H:i:s', $request->end_date);
-            
+
             if($request->client_id){
                 $client = Client::firstOrCreate(['people_id' => $request->client_id]);
                 $data['client_id'] = $client->id;
             }
-            
+
             $reservation = Reservation::create($data);
 
             foreach($request->rooms as $room){
@@ -87,8 +87,10 @@ class ReservationController extends Controller
                     'price_value' => $room['price_value'],
                     'total_price' => $room['total_price'],
                 ]);
+
+                DB::table('rooms')->where('id', $room['id'])->update(array('room_status_id' => '4')); //Reservada
             }
-            
+
             foreach($request->guests as $guest){
                 ReservationGuest::create([
                     'reservation_id' => $reservation->id,
@@ -97,12 +99,12 @@ class ReservationController extends Controller
             }
 
             $reservation->update(['token_for_observer' => Str::random(10)]);
-            
+
             $this->saveUserLog($reservation);
             $this->notifyReservationCreated($reservation);
 
             DB::commit();
-            
+
             return $this->successResponse(new ReservationResource($reservation), Response::HTTP_OK);
         }catch(\Exception $e){
             DB::rollBack();
@@ -119,6 +121,10 @@ class ReservationController extends Controller
     public function show(Reservation $reservation)
     {
         return $this->successResponse(new ReservationResource($reservation));
+        /*return [
+            'success' => true,
+            'message' =>new ReservationResource($reservation)
+        ];*/
     }
 
     /**
@@ -142,27 +148,40 @@ class ReservationController extends Controller
     public function update(ReservationUpdateRequest $request, Reservation $reservation)
     {
         try{
+
             $turnChange = TurnChange::where('status_active', '=', true)->first();
-            
+            //dd(9);
             DB::beginTransaction();
 
             $data = $request->all();
+
             if(\in_array('start_date', $data)){
                 $data['start_date'] = Carbon::createFromFormat('d/m/Y H:i:s', $request->start_date);
             }
             if(\in_array('end_date', $data)){
                 $data['end_date'] = Carbon::createFromFormat('d/m/Y H:i:s', $request->end_date);
             }
-            
+
             if($request->client_id){
                 $client = Client::firstOrCreate(['people_id' => $request->client_id]);
                 $data['client_id'] = $client->id;
             }
-            
+
             $reservation->update($data);
-            
+
             $this->saveUserLog($reservation, 'update');
 
+           if(isset($request->reservation_state_id) && $request->reservation_state_id == '3' ||
+                $request->reservation_state_id == '4'){
+
+                $rooms = ReservationRoom::where('reservation_id',$reservation->id)->get();
+
+                foreach($rooms as $room){
+
+                    DB::table('rooms')->where('id', $room['room_id'])->update(array('room_status_id' => '1')); //Disponible
+                }
+
+            }
             if(isset($request->reservation_state_id) && $request->reservation_state_id != '4'){
                 $this->notifyReservationUpdated($reservation);
             }else{
@@ -188,7 +207,7 @@ class ReservationController extends Controller
             }
 
             DB::commit();
-            
+
             return $this->successResponse(new ReservationResource($reservation), Response::HTTP_OK);
         }catch(\Exception $e){
             DB::rollBack();

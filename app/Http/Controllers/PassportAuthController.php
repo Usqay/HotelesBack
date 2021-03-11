@@ -6,9 +6,11 @@ use App\Http\Resources\UserResource;
 use Illuminate\Http\Request;
 use App\User;
 use Illuminate\Http\Response;
+use App\Traits\Utilities;
 
 class PassportAuthController extends Controller
 {
+    use Utilities;
     /**
      * Registration Req
      */
@@ -19,18 +21,18 @@ class PassportAuthController extends Controller
         //     'email' => 'required|email',
         //     'password' => 'required|min:8',
         // ]);
- 
+
         // $user = User::create([
         //     'name' => $request->name,
         //     'email' => $request->email,
         //     'password' => bcrypt($request->password)
         // ]);
- 
+
         // $token = $user->createToken('LaravelAuthApp')->accessToken;
- 
+
         // return response()->json(['token' => $token], 200);
     }
- 
+
     /**
      * Login Req
      */
@@ -42,13 +44,14 @@ class PassportAuthController extends Controller
         ];
 
         $remember = $request->remember ? $request->remember : false;
- 
+
         if (auth()->attempt($data, $remember)) {
             $token = auth()->user()->createToken('Hoteles Vicodev')->accessToken;
-            
+
             return $this->successResponse([
                 "user" => new UserResource(auth()->user()),
-                "token" => $token
+                "token" => $token,
+                "env" => $this->enviroments()
             ]);
         } else {
             return $this->errorResponse("Unauthorized", Response::HTTP_UNAUTHORIZED);

@@ -42,18 +42,18 @@ class ReservationRoomController extends Controller
     public function store(ReservationRoomCreateRequest $request)
     {
         try{
-            
+
             DB::beginTransaction();
 
             $reservation = Reservation::findOrFail($request->reservation_id);
             $total_price = 0;
 
             if($request->price_type == 'day'){
-                $total_price = $reservation->total_days * $request->price_value; 
+                $total_price = $reservation->total_days * $request->price_value;
             }else{
                 $total_price = $reservation->total_hours * $request->price_value;
             }
-            
+
             $reservationRoom = ReservationRoom::updateOrCreate([
                 'reservation_id' => $request->reservation_id,
                 'room_id' => $request->room_id
@@ -63,13 +63,13 @@ class ReservationRoomController extends Controller
                 'price_value' => $request->price_value,
                 'total_price' => $total_price,
             ]);
-            
+
             $reservation->update(['token_for_observer' => Str::random(10)]);
-            
+
             $this->saveUserLog($reservationRoom);
 
             DB::commit();
-            
+
             return $this->successResponse(new ReservationRoomResource($reservationRoom), Response ::HTTP_CREATED);
         }catch(\Exception $e){
             DB::rollBack();
@@ -128,9 +128,9 @@ class ReservationRoomController extends Controller
         $this->saveUserLog($reservationRoom, 'delete');
 
         $reservation = Reservation::findOrfail($reservationRoom->reservation_id);
-        
+
         $reservation->update(['token_for_observer' => Str::random(10)]);
-        
+
         return $this->successResponse(new ReservationRoomResource($reservationRoom));
     }
 }

@@ -5,7 +5,7 @@
 
     RewriteEngine On
 
-    RewriteBase /hotelesapi/public/
+    RewriteBase /hotel/public/
 
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .

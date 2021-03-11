@@ -15,12 +15,12 @@ class UtilitiesController extends Controller
 {
     public function enviroments(){
         $currency = Currency::where('is_base', '=', true)->first();
-        $systemConfigurations = SystemConfiguration::all();
+        $systemConfigurations = SystemConfiguration::get();
         $cashRegister = CashRegister::where('is_base', '=', true)->first();
         $turnChange = TurnChange::where('status_active', '=', true)->first();
         $currenciesCount = Currency::count('id');
         $currencyRates = CurrencyRate::orderBy('rate_date', 'DESC')->limit($currenciesCount - 1)->get();
-    
+
         return $this->successResponse([
             'base_currency' => $currency,
             'system_configurations' => $systemConfigurations,
@@ -39,11 +39,11 @@ class UtilitiesController extends Controller
             $response = Http::get($requestUrl);
 
             return $this->successResponse($response->json());
-            
+
         }catch(\Exception $e){
             try{
                 $result = $this->getLastCurrencyRates();
-                
+
                 return $this->successResponse($result);
             }catch(\Exception $ee){
                 return $this->errorResponse($e->getMessage(), Response::HTTP_BAD_REQUEST);
@@ -71,4 +71,6 @@ class UtilitiesController extends Controller
             ]
         ];
     }
+
+
 }

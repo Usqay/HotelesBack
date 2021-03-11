@@ -16,7 +16,7 @@ use App\Models\SaleService;
 use App\Models\Service;
 use App\Models\SystemConfiguration;
 use Illuminate\Support\Facades\Http;
-
+use Luecano\NumeroALetras\NumeroALetras;
 trait Billing
 {
     public $people_id = null;
@@ -92,13 +92,14 @@ trait Billing
             $this->body['cliente_direccion'] = '-';
             $this->body['cliente_email'] = '';
         }
-        
+
     }
 
     public function makeItems($data){
         $total = 0;
         $tax = 0;
         $items = [];
+        $formatter = new NumeroALetras();
 
         foreach($data as $d){
             $unitvalue = $d['unit_price'] / 1.18;
@@ -132,6 +133,7 @@ trait Billing
         $this->body['total'] = \number_format($total, 2);
         $this->body['total_igv'] = \number_format($tax, 2);
         $this->body['total_gravada'] = \number_format($total - $tax, 2);
+        $this->body['monto_letras'] = $formatter->toMoney($total, 2, 'SOLES', 'CENTIMOS');
     }
 
     public function senToApi(){
@@ -170,6 +172,7 @@ trait Billing
     public function billingFromReservationPayment(ReservationPayment $ReservationPayment){
         $serie = null;
         $number = null;
+
         $currency = Currency::findOrFail($ReservationPayment->currency_id);
         $currencyRate = CurrencyRate::where('currency_id', '=', $currency->id)
         ->orderBy('rate_date', 'DESC')->first();
@@ -185,7 +188,7 @@ trait Billing
         $electronic_voucher_type_id = 1;
 
         switch($ReservationPayment->document_type){
-            case 'bol' : 
+            case 'bol' :
                 $electronic_voucher_type_id = 2;
                 $ballot_series = SystemConfiguration::where('key', '=', 'ballot_series')->first();
                 $ballot_auto_increment = SystemConfiguration::where('key', '=', 'ballot_auto_increment')->first();
@@ -194,7 +197,7 @@ trait Billing
                 $serie = $ballot_series->value;
                 break;
 
-            case 'not' : 
+            case 'not' :
                 $electronic_voucher_type_id = 3;
                 $lastDocument = ElectronicVoucher::where('electronic_voucher_type_id', '=', $electronic_voucher_type_id)->orderBy('number', 'desc')->first();
 
@@ -239,14 +242,14 @@ trait Billing
         if($ReservationPayment->document_type != 'not'){
             $apiResult = $this->senToApi();
         }
-        
+
         $electronicVoucher = $this->storeElectronicVoucher($electronic_voucher_type_id, $number, $serie, $this->body, $ReservationPayment->print_payment, true, $apiResult['api_result']);
         $ReservationPayment->update([
             'electronic_voucher_id' => $electronicVoucher->id
         ]);
-        return $apiResult;        
+        return $apiResult ;
     }
-    
+
     public function billingFromSalePayment(SalePayment $salePayment){
         $serie = null;
         $number = null;
@@ -254,7 +257,7 @@ trait Billing
         $electronic_voucher_type_id = 1;
 
         switch($salePayment->document_type){
-            case 'bol' : 
+            case 'bol' :
                 $electronic_voucher_type_id = 2;
                 $ballot_series = SystemConfiguration::where('key', '=', 'ballot_series')->first();
                 $ballot_auto_increment = SystemConfiguration::where('key', '=', 'ballot_auto_increment')->first();
@@ -263,7 +266,7 @@ trait Billing
                 $serie = $ballot_series->value;
                 break;
 
-            case 'not' : 
+            case 'not' :
                 $electronic_voucher_type_id = 3;
                 $lastDocument = ElectronicVoucher::where('electronic_voucher_type_id', '=', $electronic_voucher_type_id)->orderBy('number', 'desc')->first();
 
@@ -287,6 +290,8 @@ trait Billing
         $this->body['moneda'] = '1'; //SOLES
         $this->body['tipo_de_cambio'] = '';
 
+
+
         $products = SaleProduct::where('sale_id', '=', $salePayment->sale_id)->get();
         $services = SaleService::where('sale_id', '=', $salePayment->sale_id)->get();
 
@@ -304,7 +309,7 @@ trait Billing
                 'disccount' => 0,
             ];
         }
-        
+
         foreach($services as $item){
             $service = Service::findOrFail($item->service_id);
             $items[] = [
@@ -329,12 +334,12 @@ trait Billing
         if($salePayment->document_type != 'not'){
             $apiResult = $this->senToApi();
         }
-        
+
         $electronicVoucher = $this->storeElectronicVoucher($electronic_voucher_type_id, $number, $serie, $this->body, $salePayment->print_payment, true, $apiResult['api_result']);
         $salePayment->update([
             'electronic_voucher_id' => $electronicVoucher->id
         ]);
-        return $apiResult;        
+        return $apiResult;
     }
 
     public function storeElectronicVoucher($electronic_voucher_type_id, $number, $serie, $apiBody, $print = true, $apiState = true, $apiResult = [], $adittionalInfo = []){

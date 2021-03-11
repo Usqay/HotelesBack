@@ -25,7 +25,7 @@ class ElectronicVoucherObserver
             $electronicVoucherType = ElectronicVoucherType::findOrFail($electronicVoucher->electronic_voucher_type_id);
             $baseCurrency = Currency::where('is_base', '=', true)->first();
 
-            $this->setBusinessInfo();
+            //$this->setBusinessInfo();
 
             foreach($apiBody['items'] as $item){
                 $this->addItem($item['descripcion'], $item['cantidad'], $item['total']);
@@ -37,9 +37,17 @@ class ElectronicVoucherObserver
 
             if(isset($apiResponse) && isset($apiResponse['cadena_para_codigo_qr'])){
                 $this->setQR($apiResponse['cadena_para_codigo_qr'], $apiResponse['codigo_hash']);
+
+                 //poner datos correctos
+                \QRCode::text($apiResponse['cadena_para_codigo_qr'])
+                ->setOutfile('./storage/qr/'.$electronicVoucher->number.'.png')
+                ->png();
+
+
             }
 
-            $this->printReceipt(strtoupper($electronicVoucherType->name), $electronicVoucher->number, $baseCurrency->symbol, $electronicVoucher->date_emitted, $apiBody['cliente_denominacion'], $apiBody['cliente_numero_de_documento']);
+
+            //$this->printReceipt(strtoupper($electronicVoucherType->name), $electronicVoucher->number, $baseCurrency->symbol, $electronicVoucher->date_emitted, $apiBody['cliente_denominacion'], $apiBody['cliente_numero_de_documento']);
         }
     }
 

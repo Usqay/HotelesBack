@@ -55,11 +55,13 @@ class ReservationPaymentController extends Controller
     public function store(ReservationPaymentStoreRequest $request)
     {
         $baseCurrency = Currency::where('is_base', '=', true)->first();
+
         try{
-            
+
             DB::beginTransaction();
 
             $turnChange = TurnChange::where('status_active', '=', true)->first();
+
             $cash_register_movement_type_id = 12;
 
             if($request->payment_by == 0){
@@ -95,7 +97,7 @@ class ReservationPaymentController extends Controller
                 'amount' => $request->total,
                 'description' => $request->description,
             ]);
-            
+
             $reservationPayment = ReservationPayment::create([
                 'description' => $request->description,
                 'reservation_id' => $request->reservation_id,
@@ -110,21 +112,35 @@ class ReservationPaymentController extends Controller
             ]);
 
             $result = $this->billingFromReservationPayment($reservationPayment);
-            
+
             if(!$result['success']){
                 $message = isset($result['api_result']['errors']) ? $result['api_result']['errors'] : 'No se pudo registrar el pago.';
                 DB::rollBack();
                 return $this->successResponse([
                     'success' => false,
                     'error' => $message
+
                 ]);
             }
 
             $this->saveUserLog($reservationPayment);
 
             DB::commit();
-            
-            return $this->successResponse($result, Response ::HTTP_CREATED);
+            //print_r($result);
+            //return $this->successResponse($result, Response ::HTTP_CREATED);
+            $datos=$result['api_body'];
+            //poner datos correctos
+            \QRCode::text('Laravel QR Code Generator!')
+            ->setOutfile('./qr/'.$result['api_body']['numero'].'.png')
+            ->png();
+
+            return $this->successResponse([
+                'success' => true,
+                'data' => $result,
+                'imprimir' => \View::make('documents.note', compact('datos'))->render()
+
+            ]);
+
         }catch(\Exception $e){
             DB::rollBack();
             return $this->errorResponse("Couldn't store data".$e->getMessage(), Response::HTTP_BAD_REQUEST);
