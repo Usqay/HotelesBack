@@ -2,27 +2,32 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\RoomCreateRequest;
-use App\Http\Requests\RoomReserveRequest;
-use App\Http\Requests\RoomUpdateRequest;
-use App\Http\Resources\RoomResource;
-use App\Models\CashRegisterMovement;
-use App\Models\Client;
-use App\Models\Currency;
+use Carbon\Carbon;
+use App\Models\Room;
 use App\Models\Guest;
+use App\Models\Client;
+use App\Models\Gender;
 use App\Models\People;
+use App\Traits\Billing;
+use App\Models\Currency;
+use App\Models\RoomPrice;
+use App\Models\RoomStatus;
+use App\Models\TurnChange;
 use App\Models\Reservation;
+use Illuminate\Support\Str;
+use App\Models\DocumentType;
+use App\Models\RoomCategory;
+use App\Models\PaymentMethod;
+use Illuminate\Http\Response;
+use App\Models\ReservationRoom;
 use App\Models\ReservationGuest;
 use App\Models\ReservationPayment;
-use App\Models\ReservationRoom;
-use App\Models\Room;
-use App\Models\RoomPrice;
-use App\Models\TurnChange;
-use Carbon\Carbon;
-use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
-use App\Traits\Billing;
+use App\Http\Resources\RoomResource;
+use App\Models\CashRegisterMovement;
+use App\Http\Requests\RoomCreateRequest;
+use App\Http\Requests\RoomUpdateRequest;
+use App\Http\Requests\RoomReserveRequest;
 
 class RoomController extends Controller
 {
@@ -52,6 +57,46 @@ class RoomController extends Controller
 
         return RoomResource::collection($rooms);
     }
+    public function list()
+    {
+        $id = request()->query('id');
+
+        if($id == 0){
+            $rooms = Room::get();
+        }else{
+             $rooms = Room::where('room_category_id',$id)->get();
+        }
+
+
+        return RoomResource::collection($rooms);
+    }
+
+    public function getCategoriesStatus()
+    {
+        $status = RoomStatus::whereNull('deleted_at')->get();
+        $category=RoomCategory::whereNull('deleted_at')->get();
+        return [
+            'status' => $status,
+            'category' => $category
+        ];
+    }
+
+    public function getData(){
+        $documentTypes = DocumentType::get();
+        $genders = Gender::get();
+        $paymentMethods = PaymentMethod::get();
+        $currencies = Currency::get();
+        return  compact('documentTypes','genders','paymentMethods','currencies');
+    }
+
+    public function getCurrencPaymentMethod(){
+
+        $paymentMethods = PaymentMethod::get();
+        $currencies = Currency::get();
+
+        return  compact('paymentMethods','currencies');
+    }
+
 
     /**
      * Show the form for creating a new resource.
@@ -72,15 +117,15 @@ class RoomController extends Controller
     public function store(RoomCreateRequest $request)
     {
         try{
-            
+
             DB::beginTransaction();
-            
+
             $room = Room::create($request->toArray());
-        
+
             $this->saveUserLog($room);
 
             DB::commit();
-            
+
             return $this->successResponse(new RoomResource($room), Response ::HTTP_CREATED);
         }catch(\Exception $e){
             DB::rollBack();
@@ -120,9 +165,9 @@ class RoomController extends Controller
     public function update(RoomUpdateRequest $request, Room $room)
     {
         try{
-            
+
             DB::beginTransaction();
-            
+
             $room->fill($request->toArray());
             $room->save();
 
@@ -134,11 +179,11 @@ class RoomController extends Controller
                     );
                 }
             }
-        
+
             $this->saveUserLog($room, 'update');
 
             DB::commit();
-            
+
             return $this->successResponse(new RoomResource($room));
         }catch(\Exception $e){
             DB::rollBack();
@@ -166,7 +211,7 @@ class RoomController extends Controller
 
         return $this->successResponse(new RoomResource($room));
     }
-    
+
     /**
      * Store a newly reservation.
      *
@@ -179,7 +224,7 @@ class RoomController extends Controller
 
             $turnChange = TurnChange::where('status_active', '=', true)->first();
             $baseCurrency = Currency::where('is_base', '=', true)->first();
-            
+
             DB::beginTransaction();
 
             $data = $request->all();
@@ -189,7 +234,7 @@ class RoomController extends Controller
             $data['end_date'] = Carbon::createFromFormat('d/m/Y H:i:s', $request->end_date);
 
             $peopleFullName = isset($request->people_full_name) ? $request->people_full_name : $request->people_name.' '.$request->people_last_name;
-            
+
             $people = People::firstOrCreate(['document_number' => $request->people_document_number],[
                 'document_type_id' => $request->people_document_type_id,
                 'full_name' => $peopleFullName,
@@ -204,7 +249,7 @@ class RoomController extends Controller
             $data['reservation_origin_id'] = 1;
             $data['total_days'] = $request->days;
             $data['total_hours'] = $request->hours;
-            
+
             $reservation = Reservation::create($data);
 
             $roomTotalPrice = 0;
@@ -222,7 +267,7 @@ class RoomController extends Controller
                 'price_value' => $request->room_price_value,
                 'total_price' => $roomTotalPrice
             ]);
-            
+
             ReservationGuest::create([
                 'reservation_id' => $reservation->id,
                 'guest_id' => $guest->id,
@@ -258,7 +303,7 @@ class RoomController extends Controller
                     'amount' => $request->payment_amount,
                     'description' => "Pago de alquiler de habitación",
                 ]);
-                
+
                 $reservationPayment = ReservationPayment::create([
                     'description' => "Pago de alquiler de habitación",
                     'reservation_id' => $reservation->id,
@@ -273,7 +318,7 @@ class RoomController extends Controller
                 ]);
 
                 $result = $this->billingFromReservationPayment($reservationPayment);
-                
+
                 if(!$result['success']){
                     $message = isset($result['api_result']['errors']) ? $result['api_result']['errors'] : 'No se pudo registrar el pago.';
                     DB::rollBack();
@@ -283,12 +328,12 @@ class RoomController extends Controller
                     ]);
                 }
             }
-            
+
             $this->saveUserLog($reservation);
             $this->notifyReservationCreated($reservation);
 
             DB::commit();
-            
+
             return $this->successResponse([
                 'success' => true
             ], Response::HTTP_OK);

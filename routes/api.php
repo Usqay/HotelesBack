@@ -1,48 +1,49 @@
 <?php
 
-use App\Http\Controllers\CashRegisterController;
-use App\Http\Controllers\CashRegisterMovementController;
-use App\Http\Controllers\CurrencyController;
-use App\Http\Controllers\CurrencyRateController;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\DocumentTypeController;
-use App\Http\Controllers\ElectronicVoucherController;
-use App\Http\Controllers\ElectronicVoucherTypeController;
-use App\Http\Controllers\GenderController;
-use App\Http\Controllers\GuestController;
-use App\Http\Controllers\PassportAuthController;
-use App\Http\Controllers\PaymentMethodController;
-use App\Http\Controllers\PeopleController;
-use App\Http\Controllers\PermissionController;
-use App\Http\Controllers\PrinterController;
-use App\Http\Controllers\PrinterTypeController;
-use App\Http\Controllers\ProductController;
-use App\Http\Controllers\ProductStockController;
-use App\Http\Controllers\ReportsController;
-use App\Http\Controllers\RoomCategoryController;
+use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\RoomController;
-use App\Http\Controllers\RoomPriceController;
-use App\Http\Controllers\RoomProductController;
-use App\Http\Controllers\RoomStatusController;
-use App\Http\Controllers\StoreHouseController;
-use App\Http\Controllers\StoreHouseMovementController;
-use App\Http\Controllers\StoreHouseMovementTypeController;
-use App\Http\Controllers\ReservationController;
-use App\Http\Controllers\ReservationGuestController;
-use App\Http\Controllers\ReservationOriginController;
-use App\Http\Controllers\ReservationPaymentController;
-use App\Http\Controllers\ReservationRoomController;
-use App\Http\Controllers\RolesController;
 use App\Http\Controllers\SaleController;
-use App\Http\Controllers\ServiceController;
-use App\Http\Controllers\ServiceProductController;
-use App\Http\Controllers\SunatCodesController;
-use App\Http\Controllers\SystemConfigurationController;
-use App\Http\Controllers\TurnChangeController;
 use App\Http\Controllers\TurnController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\GuestController;
+use App\Http\Controllers\RolesController;
+use App\Http\Controllers\GenderController;
+use App\Http\Controllers\PeopleController;
+use App\Http\Controllers\PrinterController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ReportsController;
+use App\Http\Controllers\ServiceController;
+use App\Http\Controllers\CurrencyController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\PhpmailerController;
+use App\Http\Controllers\RoomPriceController;
 use App\Http\Controllers\UtilitiesController;
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\PermissionController;
+use App\Http\Controllers\RoomStatusController;
+use App\Http\Controllers\StoreHouseController;
+use App\Http\Controllers\SunatCodesController;
+use App\Http\Controllers\TurnChangeController;
+use App\Http\Controllers\PrinterTypeController;
+use App\Http\Controllers\ReservationController;
+use App\Http\Controllers\RoomProductController;
+use App\Http\Controllers\CashRegisterController;
+use App\Http\Controllers\CurrencyRateController;
+use App\Http\Controllers\DocumentTypeController;
+use App\Http\Controllers\PassportAuthController;
+use App\Http\Controllers\ProductStockController;
+use App\Http\Controllers\RoomCategoryController;
+use App\Http\Controllers\PaymentMethodController;
+use App\Http\Controllers\ServiceProductController;
+use App\Http\Controllers\ReservationRoomController;
+use App\Http\Controllers\ReservationGuestController;
+use App\Http\Controllers\ElectronicVoucherController;
+use App\Http\Controllers\ReservationOriginController;
+use App\Http\Controllers\ReservationPaymentController;
+use App\Http\Controllers\StoreHouseMovementController;
+use App\Http\Controllers\SystemConfigurationController;
+use App\Http\Controllers\CashRegisterMovementController;
+use App\Http\Controllers\ElectronicVoucherTypeController;
+use App\Http\Controllers\StoreHouseMovementTypeController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -64,7 +65,9 @@ Route::get('qr-code', function ()
   ->setOutfile('./qr/email-qr-code.png')
   ->png();
 });
-
+Route::get('rooms/getCategoriesStatus', [RoomController::class,'getCategoriesStatus']);
+Route::get('rooms/list', [RoomController::class,'list']);
+Route::get('email/sendmail', [PhpmailerController::class,'email']);
 Route::middleware('auth:api')->group(function(){
 
     Route::apiResource('currencies', CurrencyController::class);
@@ -76,7 +79,11 @@ Route::middleware('auth:api')->group(function(){
     Route::apiResource('room-prices', RoomPriceController::class)->except(['index', 'show']);
     Route::apiResource('room-products', RoomProductController::class)->except(['index', 'show']);
     Route::apiResource('rooms', RoomController::class);
+
+    Route::get('rooms/getCategoriesStatus', [RoomController::class,'getCategoriesStatus']);
     Route::post('room-reserve', [RoomController::class, 'reserve']);
+    Route::get('room-reserve/data', [RoomController::class, 'getData']);
+    Route::get('getCurrencPaymentMethod', [RoomController::class, 'getCurrencPaymentMethod']);
     Route::apiResource('products', ProductController::class);
     Route::apiResource('product-stocks', ProductStockController::class)->only(['index']);
 
@@ -96,12 +103,15 @@ Route::middleware('auth:api')->group(function(){
     Route::apiResource('genders', GenderController::class)->only(['index']);
     Route::apiResource('people', PeopleController::class)->only(['index', 'store']);
     Route::apiResource('guests', GuestController::class)->only(['store']);
+    Route::get('guests/data', [GuestController::class,'data']);
     Route::apiResource('reservation-origins', ReservationOriginController::class)->only(['index']);
     Route::apiResource('reservation-guests', ReservationGuestController::class)->only(['store']);
     Route::apiResource('reservation-rooms', ReservationRoomController::class)->only(['store', 'destroy', 'index']);
     Route::apiResource('reservation-payments', ReservationPaymentController::class);
 
+    Route::get('listado', [ReservationController::class,'listado']);
     Route::apiResource('reservations', ReservationController::class);
+
 
     Route::apiResource('system-configurations', SystemConfigurationController::class)->only(['index', 'store']);
 

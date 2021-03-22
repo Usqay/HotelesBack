@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\GuestStoreRequest;
-use App\Http\Resources\GuestResource;
 use App\Models\Guest;
+use App\Models\Gender;
 use App\Models\People;
+use App\Models\DocumentType;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
+use App\Http\Resources\GuestResource;
+use App\Http\Requests\GuestStoreRequest;
 
 class GuestController extends Controller
 {
@@ -21,6 +23,13 @@ class GuestController extends Controller
         //
     }
 
+    public function data(){
+
+        $genders = Gender::get();
+        $documentTypes = DocumentType::get();
+
+        return compact('genders','documentTypes');
+    }
     /**
      * Show the form for creating a new resource.
      *
@@ -40,7 +49,7 @@ class GuestController extends Controller
     public function store(GuestStoreRequest $request)
     {
         try{
-            
+
             DB::beginTransaction();
 
             $people = People::firstOrNew([
@@ -49,7 +58,7 @@ class GuestController extends Controller
             ]);
 
             $data = $request->all();
-            
+
             if($data['birthday_date']){
                 $data['birthday_date'] = explode('T', $data['birthday_date'])[0];
             }
@@ -58,11 +67,11 @@ class GuestController extends Controller
             $people->save();
 
             $guest = Guest::firstOrCreate(['people_id' => $people->id]);
-            
+
             $this->saveUserLog($guest);
 
             DB::commit();
-            
+
             return $this->successResponse(new GuestResource($guest), Response ::HTTP_CREATED);
         }catch(\Exception $e){
             DB::rollBack();

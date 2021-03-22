@@ -50,15 +50,15 @@ class ProductController extends Controller
     public function store(ProductCreateRequest $request)
     {
         try{
-            
+
             DB::beginTransaction();
-            
+
             $product = Product::create($request->toArray());
-            
+
             $this->saveUserLog($product);
 
             DB::commit();
-            
+
             return $this->successResponse(new ProductResource($product), Response ::HTTP_CREATED);
         }catch(\Exception $e){
             DB::rollBack();
@@ -98,12 +98,12 @@ class ProductController extends Controller
     public function update(ProductUpdateRequest $request, Product $product)
     {
         try{
-            
+
             DB::beginTransaction();
-            
+
             $product->fill($request->toArray());
             $product->save();
-            
+
             if($request->prices){
                 foreach($request->prices as $price){
                     ProductPrice::where('product_id', '=', $product->id)
@@ -115,11 +115,11 @@ class ProductController extends Controller
                     ]);
                 }
             }
-        
+
             $this->saveUserLog($product, 'update');
 
             DB::commit();
-            
+
             return $this->successResponse(new ProductResource($product));
         }catch(\Exception $e){
             DB::rollBack();

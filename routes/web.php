@@ -17,5 +17,6 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', function(){
+    echo exec('php ../artisan passport:install');
     echo "Welcome";
 });

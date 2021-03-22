@@ -2,16 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\UserCreateRequest;
-use App\Http\Requests\UserUpdateRequest;
-use App\Http\Resources\UserResource;
-use App\Models\People;
+use Carbon\Carbon;
 use App\Models\User;
+use App\Models\People;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
+use App\Http\Resources\UserResource;
+use Illuminate\Support\Facades\Hash;
+use App\Http\Requests\UserCreateRequest;
+use App\Http\Requests\UserUpdateRequest;
 
 class UserController extends Controller
 {
@@ -30,7 +31,7 @@ class UserController extends Controller
                 $query->where("name", "like", "%$q%")
                     ->orWhere("email", "like", "%$q%");
             });
-            
+
         if(!auth()->user() || !auth()->user()->hasRole('Staff')){
             $users->where('id', '!=', 1);
         }
@@ -61,6 +62,9 @@ class UserController extends Controller
             DB::beginTransaction();
 
             $data = $request->all();
+
+            $birthday_date = Carbon::parse($data['birthday_date']);
+            $data['birthday_date']=$birthday_date->format('Y-m-d');
 
             $data['full_name'] = $data['name'] . ' ' . $data['last_name'];
 
@@ -102,7 +106,7 @@ class UserController extends Controller
                return $this->errorResponse('User not found', Response::HTTP_NOT_FOUND);
            }
         }
-        
+
         return $this->successResponse(new UserResource($user));
     }
 

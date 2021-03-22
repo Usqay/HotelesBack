@@ -40,7 +40,7 @@ class ElectronicVoucherObserver
 
                  //poner datos correctos
                 \QRCode::text($apiResponse['cadena_para_codigo_qr'])
-                ->setOutfile('./storage/qr/'.$electronicVoucher->number.'.png')
+                ->setOutfile('./qr/'.$electronicVoucher->number.'.png')
                 ->png();
 
 

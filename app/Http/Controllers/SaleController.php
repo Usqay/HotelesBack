@@ -42,7 +42,7 @@ class SaleController extends Controller
         if(isset($reservationId)){
             $sales->where('reservation_id', '=', $reservationId);
         }
-        
+
         $sales = $sales->paginate($paginate);
 
         return SaleResource::collection($sales);
@@ -68,12 +68,13 @@ class SaleController extends Controller
     {
         try{
             $turnChange = TurnChange::where('status_active', '=', true)->first();
-            
+
             $storeHouse = StoreHouse::where('is_base', '=', true)->first();
             $peopleId = null;
+            $datos =[];
 
             DB::beginTransaction();
-            
+
             $storeHouseMovement = StoreHouseMovement::create([
                 'store_house_id' => $storeHouse->id,
                 'store_house_movement_type_id' => '7',
@@ -86,7 +87,7 @@ class SaleController extends Controller
                 'turn_change_id' => $turnChange->id,
                 'store_house_movement_id' => $storeHouseMovement->id
             ]);
-            
+
             if($request->people != null &&  isset($request->people['document_number'])){
                 $peopleData = $request->people;
                 $peopleData['full_name'] = $peopleData['name'].' '.$peopleData['last_name'];
@@ -111,7 +112,7 @@ class SaleController extends Controller
                     'rate_value' => $item['rate_value'],
                 ]);
             }
-            
+
             foreach($request->services as $item){
                 SaleService::create([
                     'sale_id' => $sale->id,
@@ -138,7 +139,7 @@ class SaleController extends Controller
                     'client_id' => $reservation->client_id,
                     'room_id' => $request->room_id
                 ]);
-                
+
                 $reservation->update(['token_for_observer' => Str::random(10)]);
             }else{
 
@@ -180,32 +181,35 @@ class SaleController extends Controller
                     'print_payment' => $requestPayment['print_payment'],
                     'document_type' => $requestPayment['document_type'],
                 ]);
-    
+
                 $result = $this->billingFromSalePayment($SalePayment);
-                
+
+                $datos=$result['api_body'];
                 if(!$result['success']){
                     $message = isset($result['api_result']['errors']) ? $result['api_result']['errors'] : 'No se pudo registrar el pago.';
                     DB::rollBack();
                     return $this->successResponse([
                         'success' => false,
                         'error' => $message
+
                     ]);
                 }
             }
-            
+
             $sale->update([
                 'sale_state_id' => 3
             ]);
-            
+
             $this->saveUserLog($sale);
 
             DB::commit();
 
-            return $this->successResponse(['success' => true], Response::HTTP_OK);
+            return isset($request->reservation_id) ? $this->successResponse(['success' => true,'imprimir' => ''], Response::HTTP_OK)
+            : $this->successResponse(['success' => true,'imprimir' => \View::make('documents.note', compact('datos'))->render()], Response::HTTP_OK);
 
         }catch(\Exception $e){
             DB::rollBack();
-            return $this->errorResponse("Couldn't store data".$e->getMessage(), Response::HTTP_BAD_REQUEST);
+            return $this->errorResponse("Couldn't store data ".$e->getMessage(), Response::HTTP_BAD_REQUEST);
         }
     }
 

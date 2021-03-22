@@ -282,11 +282,12 @@ break;
         </tr>
     </table>
     <table border="0" width="100%" style="font-size: 8px;">
-
+        <?php if($datos['tipo_de_comprobante'] != 3):?>
         <tr class='txt-left bold'>
             <td colspan="5"  class='txt-right'>Op. Gravadas:</td>
             <td colspan='1' class='txt-center'>{{ $currency[0]['symbol'] }} {{ $datos['total_gravada'] }}</td>
         </tr>
+        <?php endif;?>
         <tr class="txt-left bold">
             <td colspan="5"  class="txt-right">I.G.V:</td>
             <td colspan="1" class="txt-center">{{ $currency[0]['symbol'] }} {{ $datos['total_igv'] }}</td>

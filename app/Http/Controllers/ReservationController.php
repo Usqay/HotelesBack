@@ -2,20 +2,21 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\ReservationCreateRequest;
-use App\Http\Requests\ReservationUpdateRequest;
-use App\Http\Resources\ReservationResource;
-use App\Models\CashRegisterMovement;
+use Carbon\Carbon;
 use App\Models\Client;
+use App\Models\TurnChange;
 use App\Models\Reservation;
+use Illuminate\Support\Str;
+use Illuminate\Http\Response;
+use App\Models\ReservationRoom;
 use App\Models\ReservationGuest;
 use App\Models\ReservationPayment;
-use App\Models\ReservationRoom;
-use App\Models\TurnChange;
-use Carbon\Carbon;
-use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
+use App\Models\CashRegisterMovement;
+use App\Http\Resources\ReservationResource;
+use App\Http\Resources\ReservationsResource;
+use App\Http\Requests\ReservationCreateRequest;
+use App\Http\Requests\ReservationUpdateRequest;
 
 class ReservationController extends Controller
 {
@@ -39,6 +40,38 @@ class ReservationController extends Controller
         $reservations = $reservations->paginate($paginate);
 
         return ReservationResource::collection($reservations);
+    }
+
+    public function listado()
+    {
+        $q = request()->query('q');
+        $state = request()->query('state');
+        $paginate = request()->query('paginate') != null ? request()->query('paginate') : 15;
+
+
+        $reservations = DB::table('reservations as r')
+       // ->join('reservation_rooms as rr', 'rr.reservation_id', '=', 'r.id')
+        ->leftJoin('clients as c', 'c.id', '=', 'r.client_id')
+        ->leftJoin('people as p', 'p.id', '=', 'c.people_id')
+        ->join('reservation_origins as ro', 'r.reservation_origin_id', '=', 'ro.id' )
+        ->join('reservation_states as rs','r.reservation_state_id', '=', 'rs.id')
+        ->select([
+            "r.id as id",
+            "r.start_date as start_date",
+            "r.end_date as end_date",
+            "p.full_name as people",
+            "ro.name as origen",
+            "rs.name as estado",
+        ])
+        //->where('r.reservation_state_id',[1,2])
+       ->orderBy('r.id', 'DESC')
+        ;
+        if($state){
+            $reservations->where('reservation_state_id', '=', $state);
+        }
+       $collection= $reservations->paginate($paginate);
+
+       return ReservationsResource::collection($collection);
     }
 
     /**

@@ -130,9 +130,9 @@ class ReservationPaymentController extends Controller
             //return $this->successResponse($result, Response ::HTTP_CREATED);
             $datos=$result['api_body'];
             //poner datos correctos
-            \QRCode::text('Laravel QR Code Generator!')
+            /*\QRCode::text('Laravel QR Code Generator!')
             ->setOutfile('./qr/'.$result['api_body']['numero'].'.png')
-            ->png();
+            ->png();*/
 
             return $this->successResponse([
                 'success' => true,
