@@ -68,12 +68,15 @@ Route::get('qr-code', function ()
 Route::get('rooms/getCategoriesStatus', [RoomController::class,'getCategoriesStatus']);
 Route::get('rooms/list', [RoomController::class,'list']);
 Route::get('email/sendmail', [PhpmailerController::class,'email']);
+Route::get('reportecaja/imprimir2', [CashRegisterMovementController::class,'imprimir2']);
+Route::get('cash-register-movements/listar', [CashRegisterMovementController::class,'listar']);
 Route::middleware('auth:api')->group(function(){
 
     Route::apiResource('currencies', CurrencyController::class);
     Route::apiResource('currency-rates', CurrencyRateController::class);
     Route::apiResource('cash-registers', CashRegisterController::class);
     Route::apiResource('cash-register-movements', CashRegisterMovementController::class);
+
     Route::apiResource('room-categories', RoomCategoryController::class);
     Route::apiResource('room-statuses', RoomStatusController::class);
     Route::apiResource('room-prices', RoomPriceController::class)->except(['index', 'show']);

@@ -181,7 +181,7 @@ break;
 
 </head>
 
-<body onLoad="window.print(); window.close();"; style="margin: 0px !important;">
+<body onLoad="window.print(); window.close();" style="margin: 0px !important;">
     <?php
     $image = base64_encode(file_get_contents(asset('logo.png')));
     //echo asset('storage/qr/'.$datos['numero'].'.png');
@@ -189,9 +189,9 @@ break;
     ?>
 
 
-    <div class="txt-center company_logo_ticket pt-4">
+    <!--<div class="txt-center company_logo_ticket pt-4">
         <img width="80%" height="90%" src="data:image/png;base64,{{base64_encode(file_get_contents(asset('logo.png')))}}" alt="">
-    </div>
+    </div>-->
 
 
     <!-- definimos el formato de la boleta mediante una tabla -->
