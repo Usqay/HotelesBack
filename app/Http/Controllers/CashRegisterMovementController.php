@@ -47,7 +47,7 @@ class CashRegisterMovementController extends Controller
             $cashRegisterMovements->where('cash_register_id', '=', $cashRegisterId);
         }
 
-        $cashRegisterMovements = $cashRegisterMovements->paginate($paginate);
+        $cashRegisterMovements = $cashRegisterMovements->paginate(300);
 
         return CashRegisterMovementResource::collection($cashRegisterMovements);
     }
@@ -60,42 +60,20 @@ class CashRegisterMovementController extends Controller
         $cashRegisterId = request()->query('cash_register');
         $paginate = request()->query('paginate') != null ? request()->query('paginate') : 15;
 
-        $cashRegisterMovements = CashRegisterMovement::orderBy('id', 'DESC');
-        $cashRegisterMovements->whereBetween('created_at',[$request['f_inicio'],$request['f_fin']]);
+        $cashRegisterMovements = CashRegisterMovement::orderBy('id', 'DESC')
+        ->whereBetween('created_at',[$request['f_inicio'],$request['f_fin']])
+        ->get();
+
         if(isset($cashRegisterId)){
             $cashRegisterMovements->where('cash_register_id', '=', $cashRegisterId);
         }
 
-        $cashRegisterMovements = $cashRegisterMovements->paginate($paginate);
-
-        $res= CashRegisterMovementResource::collection($cashRegisterMovements);
-
-        $datos = $res->collection->transform(function($page){
-            return $page;
-        });
-       return ['success' => true,'imprimir' => \View::make('reports.movimientos_caja', compact('datos','request'))->render()];
-       // return \View::make('reports.movimientos_caja', compact('datos'));
+        //$cashRegisterMovements = $cashRegisterMovements->paginate(300);//$paginate
+        $datos= CashRegisterMovementResource::collection($cashRegisterMovements);
+       //return ['success' => true,'imprimir' => \View::make('reports.movimientos_caja', compact('datos','request'))->render()];
+        return \View::make('reports.movimientos_caja', compact('datos','request'));
     }
 
-   /* public function imprimir()
-    {
-        $q = request()->query('q');
-        $cashRegisterId = request()->query('cash_register');
-        $paginate = request()->query('paginate') != null ? request()->query('paginate') : 15;
-
-        $cashRegisterMovements = CashRegisterMovement::orderBy('id', 'DESC');
-
-        if(isset($cashRegisterId)){
-            $cashRegisterMovements->where('cash_register_id', '=', $cashRegisterId);
-        }
-
-        $cashRegisterMovements = $cashRegisterMovements->paginate($paginate);
-
-        return CashRegisterMovementResource::collection($cashRegisterMovements);
-
-       // $data = $res['data'];
-        //return ['success' => true,'imprimir' => \View::make('reports.movimientos_caja', compact('data'))];
-    }*/
 
 
 

@@ -64,6 +64,10 @@ class ReservationPaymentController extends Controller
 
             $cash_register_movement_type_id = 12;
 
+            if($request->payment_by === null || $request->payment_by === ''){
+                $request->payment_by=0;
+            }
+
             if($request->payment_by == 0){
                 $cash_register_movement_type_id = 2;
             }
