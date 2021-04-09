@@ -94,4 +94,18 @@ class ElectronicVoucherController extends Controller
     {
         //
     }
+
+    public function imprimir (Request $request){
+       
+        $datos = json_decode($request->getContent(), true);
+      
+        return $this->successResponse([
+            'success' => true,            
+            'imprimir' => \View::make('documents.note', compact('datos'))->render()
+
+        ]);
+
+      
+
+    }
 }

@@ -24,7 +24,7 @@ class ElectronicVoucherResource extends JsonResource
             'number' => $this->number,
             'serie' => $this->serie,
             'print' => $this->print,
-            'api_body' => $this->api_body,
+            'api_body' =>\json_decode($this->api_body),
             'api_response' => $this->api_response,
             'api_state' => $this->api_state,
             'adittional_info' => $this->adittional_info,

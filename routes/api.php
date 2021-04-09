@@ -112,7 +112,7 @@ Route::middleware('auth:api')->group(function(){
     Route::apiResource('reservation-rooms', ReservationRoomController::class)->only(['store', 'destroy', 'index']);
     Route::apiResource('reservation-payments', ReservationPaymentController::class);
 
-    Route::get('listado', [ReservationController::class,'listado']);
+    Route::get('listado', [ReservationController::class,'listado']);   
     Route::apiResource('reservations', ReservationController::class);
 
 
@@ -129,6 +129,7 @@ Route::middleware('auth:api')->group(function(){
     Route::apiResource('printers', PrinterController::class);
     Route::apiResource('printer-types', PrinterTypeController::class)->only(['index']);
 
+    Route::post('electronic-vouchers/imprimir', [ElectronicVoucherController::class,'imprimir']);
     Route::apiResource('electronic-vouchers', ElectronicVoucherController::class);
     Route::apiResource('electronic-voucher-types', ElectronicVoucherTypeController::class)->only(['index']);
 

@@ -26,5 +26,9 @@ class RoomStatusSeeder extends Seeder
             'id' => 3,
             'name' => 'En mantenimiento'
         ]);
+        RoomStatus::create([
+            'id' => 4,
+            'name' => 'Reservada'
+        ]);
     }
 }

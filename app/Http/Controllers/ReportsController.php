@@ -6,6 +6,7 @@ use App\Models\CurrencyRate;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Response;
 
 class ReportsController extends Controller
 {
@@ -57,71 +58,77 @@ class ReportsController extends Controller
 
     public function dayli(Request $filters)
     {
-        $date = str_replace('/', '-', substr($filters->date, 0, 10));
-        $startDate = Carbon::createFromFormat('d-m-Y H:i:s', $date . ' 00:00:00');
-        $endDate = Carbon::createFromFormat('d-m-Y H:i:s', $date . ' 23:59:59');
+       
+      
+            $createdAt = Carbon::parse($filters->date);
+            $date = $createdAt->format('Y-d-m');
+            //$date = str_replace('/', '-', substr($filters->date, 0, 9));
+            //echo $date;
+            $startDate =  $date . ' 00:00:00';//Carbon::createFromFormat('d-m-Y H:i:s', $date . ' 00:00:00');
+            $endDate = $date . ' 23:59:59';// Carbon::createFromFormat('d-m-Y H:i:s', $date . ' 23:59:59');
+            //return($startDate);
+            $cashRegisterMovements = DB::table('cash_register_movements as crm')
+                ->join('cash_register_movement_types as crmt', 'crmt.id', '=', 'crm.cash_register_movement_type_id')
+                ->join('currencies as cu', 'cu.id', '=', 'crm.currency_id')
+                ->select([
+                    DB::raw("SUM(crm.amount) as total"),
+                    "crmt.name as type_name",
+                    "crmt.id as type_id",
+                    "crmt.in_out as in_out",
+                    "cu.plural_name as currency_name",
+                    "cu.symbol as currency_symbol",
+                ])
+                ->groupBy(['type_name', 'type_id', 'in_out', 'currency_name', 'currency_symbol'])
+                ->where('crmt.id', '!=', 8)
+                ->whereBetween('crm.created_at', [$startDate, $endDate]);
 
-        $cashRegisterMovements = DB::table('cash_register_movements as crm')
-            ->join('cash_register_movement_types as crmt', 'crmt.id', '=', 'crm.cash_register_movement_type_id')
-            ->join('currencies as cu', 'cu.id', '=', 'crm.currency_id')
-            ->select([
-                DB::raw("SUM(crm.amount) as total"),
-                "crmt.name as type_name",
-                "crmt.id as type_id",
-                "crmt.in_out as in_out",
-                "cu.plural_name as currency_name",
-                "cu.symbol as currency_symbol",
-            ])
-            ->groupBy(['type_name', 'type_id', 'in_out', 'currency_name', 'currency_symbol'])
-            ->where('crmt.id', '!=', 8)
-            ->whereBetween('crm.created_at', [$startDate, $endDate]);
+            $incomeAndExpenses = DB::table('cash_register_movements as crm')
+                ->join('cash_register_movement_types as crmt', 'crmt.id', '=', 'crm.cash_register_movement_type_id')
+                ->join('currencies as cu', 'cu.id', '=', 'crm.currency_id')
+                ->select([
+                    DB::raw("SUM(crm.amount) as total"),
+                    "crmt.in_out as in_out",
+                    "cu.plural_name as currency_name",
+                    "cu.symbol as currency_symbol",
+                ])
+                ->groupBy(['in_out', 'currency_name', 'currency_symbol'])
+                ->where('crmt.id', '!=', 8)
+                ->whereBetween('crm.created_at', [$startDate, $endDate]);
 
-        $incomeAndExpenses = DB::table('cash_register_movements as crm')
-            ->join('cash_register_movement_types as crmt', 'crmt.id', '=', 'crm.cash_register_movement_type_id')
-            ->join('currencies as cu', 'cu.id', '=', 'crm.currency_id')
-            ->select([
-                DB::raw("SUM(crm.amount) as total"),
-                "crmt.in_out as in_out",
-                "cu.plural_name as currency_name",
-                "cu.symbol as currency_symbol",
-            ])
-            ->groupBy(['in_out', 'currency_name', 'currency_symbol'])
-            ->where('crmt.id', '!=', 8)
-            ->whereBetween('crm.created_at', [$startDate, $endDate]);
+            $cashRegisterMovementsByPaymentMethods = DB::table('cash_register_movements as crm')
+                ->join('cash_register_movement_types as crmt', 'crmt.id', '=', 'crm.cash_register_movement_type_id')
+                ->join('currencies as cu', 'cu.id', '=', 'crm.currency_id')
+                ->join('payment_methods as pm', 'pm.id', '=', 'crm.payment_method_id')
+                ->select([
+                    DB::raw("SUM(crm.amount) as total"),
+                    "pm.name as payment_method_name",
+                    "crmt.in_out as in_out",
+                    "cu.plural_name as currency_name",
+                    "cu.symbol as currency_symbol",
+                ])
+                ->groupBy(['payment_method_name', 'in_out', 'currency_name', 'currency_symbol'])
+                ->where('crmt.id', '!=', 8)
+                ->whereBetween('crm.created_at', [$startDate, $endDate]);
 
-        $cashRegisterMovementsByPaymentMethods = DB::table('cash_register_movements as crm')
-            ->join('cash_register_movement_types as crmt', 'crmt.id', '=', 'crm.cash_register_movement_type_id')
-            ->join('currencies as cu', 'cu.id', '=', 'crm.currency_id')
-            ->join('payment_methods as pm', 'pm.id', '=', 'crm.payment_method_id')
-            ->select([
-                DB::raw("SUM(crm.amount) as total"),
-                "pm.name as payment_method_name",
-                "crmt.in_out as in_out",
-                "cu.plural_name as currency_name",
-                "cu.symbol as currency_symbol",
-            ])
-            ->groupBy(['payment_method_name', 'in_out', 'currency_name', 'currency_symbol'])
-            ->where('crmt.id', '!=', 8)
-            ->whereBetween('crm.created_at', [$startDate, $endDate]);
+            $currencyRates = CurrencyRate::where('rate_date', '=', $startDate)->with('currency')->get();
 
-        $currencyRates = CurrencyRate::where('rate_date', '=', $startDate)->with('currency')->get();
+            if ($filters->cash_register_id >= 1) {
+                $cashRegisterMovements->where('crm.cash_register_id', '=', $filters->cash_register_id);
+                $incomeAndExpenses->where('crm.cash_register_id', '=', $filters->cash_register_id);
+                $cashRegisterMovementsByPaymentMethods->where('crm.cash_register_id', '=', $filters->cash_register_id);
+            }
 
-        if ($filters->cash_register_id >= 1) {
-            $cashRegisterMovements->where('crm.cash_register_id', '=', $filters->cash_register_id);
-            $incomeAndExpenses->where('crm.cash_register_id', '=', $filters->cash_register_id);
-            $cashRegisterMovementsByPaymentMethods->where('crm.cash_register_id', '=', $filters->cash_register_id);
-        }
+            $cashRegisterMovements = $cashRegisterMovements->get();
+            $incomeAndExpenses = $incomeAndExpenses->get();
+            $cashRegisterMovementsByPaymentMethods = $cashRegisterMovementsByPaymentMethods->get();
 
-        $cashRegisterMovements = $cashRegisterMovements->get();
-        $incomeAndExpenses = $incomeAndExpenses->get();
-        $cashRegisterMovementsByPaymentMethods = $cashRegisterMovementsByPaymentMethods->get();
-
-        return $this->successResponse([
-            'cash_register_movements' => $cashRegisterMovements,
-            'income_and_expenses' => $incomeAndExpenses,
-            'currency_rates' => $currencyRates,
-            'cash_register_movements_by_payment_methods' => $cashRegisterMovementsByPaymentMethods,
-        ]);
+            return $this->successResponse([
+                'cash_register_movements' => $cashRegisterMovements,
+                'income_and_expenses' => $incomeAndExpenses,
+                'currency_rates' => $currencyRates,
+                'cash_register_movements_by_payment_methods' => $cashRegisterMovementsByPaymentMethods,
+            ]);
+        
     }
 
     public function reservations(Request $filters)
