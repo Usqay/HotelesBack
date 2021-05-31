@@ -18,6 +18,7 @@ trait Utilities {
         $turnChange = TurnChange::where('status_active', '=', true)->first();
         $currenciesCount = Currency::count('id');
         $currencyRates = CurrencyRate::orderBy('rate_date', 'DESC')->limit($currenciesCount - 1)->get();
+      
 
         return [
             'base_currency' => $currency,

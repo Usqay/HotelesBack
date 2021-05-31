@@ -17,5 +17,6 @@ class ElectronicVoucherTypeSeeder extends Seeder
         ElectronicVoucherType::create(['name' => 'Factura']);
         ElectronicVoucherType::create(['name' => 'Boleta']);
         ElectronicVoucherType::create(['name' => 'Nota de venta']);
+        ElectronicVoucherType::create(['name' => 'Nota de crédito']);
     }
 }

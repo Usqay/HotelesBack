@@ -58,14 +58,14 @@ class ReportsController extends Controller
 
     public function dayli(Request $filters)
     {
-       
       
-            $createdAt = Carbon::parse($filters->date);
-            $date = $createdAt->format('Y-d-m');
-            //$date = str_replace('/', '-', substr($filters->date, 0, 9));
-            //echo $date;
-            $startDate =  $date . ' 00:00:00';//Carbon::createFromFormat('d-m-Y H:i:s', $date . ' 00:00:00');
-            $endDate = $date . ' 23:59:59';// Carbon::createFromFormat('d-m-Y H:i:s', $date . ' 23:59:59');
+      
+            //$createdAt = Carbon::parse($filters->date);
+            //$date = $createdAt->format('Y-d-m');
+            $date =Carbon::createFromFormat('d/m/Y H:i:s', $filters->date)->format('d-m-Y');           
+           
+            $startDate = Carbon::createFromFormat('d-m-Y H:i:s',$date. ' 00:00:00'); // $date . ' 00:00:00';
+            $endDate = Carbon::createFromFormat('d-m-Y H:i:s', $date. ' 23:59:59'); // $date . ' 23:59:59';
             //return($startDate);
             $cashRegisterMovements = DB::table('cash_register_movements as crm')
                 ->join('cash_register_movement_types as crmt', 'crmt.id', '=', 'crm.cash_register_movement_type_id')
@@ -80,6 +80,7 @@ class ReportsController extends Controller
                 ])
                 ->groupBy(['type_name', 'type_id', 'in_out', 'currency_name', 'currency_symbol'])
                 ->where('crmt.id', '!=', 8)
+                ->where('crm.deleted_at','=',null)
                 ->whereBetween('crm.created_at', [$startDate, $endDate]);
 
             $incomeAndExpenses = DB::table('cash_register_movements as crm')
@@ -93,6 +94,7 @@ class ReportsController extends Controller
                 ])
                 ->groupBy(['in_out', 'currency_name', 'currency_symbol'])
                 ->where('crmt.id', '!=', 8)
+                ->where('crm.deleted_at','=',null)
                 ->whereBetween('crm.created_at', [$startDate, $endDate]);
 
             $cashRegisterMovementsByPaymentMethods = DB::table('cash_register_movements as crm')
@@ -108,6 +110,7 @@ class ReportsController extends Controller
                 ])
                 ->groupBy(['payment_method_name', 'in_out', 'currency_name', 'currency_symbol'])
                 ->where('crmt.id', '!=', 8)
+                ->where('crm.deleted_at','=',null)
                 ->whereBetween('crm.created_at', [$startDate, $endDate]);
 
             $currencyRates = CurrencyRate::where('rate_date', '=', $startDate)->with('currency')->get();

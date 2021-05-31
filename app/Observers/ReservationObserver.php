@@ -31,6 +31,7 @@ class ReservationObserver
      */
     public function updated(Reservation $reservation)
     {
+        //dd($reservation);
         $reservationRooms = ReservationRoom::where('reservation_id', '=', $reservation->id)->get();
         $baseCurrency = Currency::where('is_base', '=', true)->first();
         $saleTotals = Sale::where('reservation_id', '=', $reservation->id)->with('totals')->get();

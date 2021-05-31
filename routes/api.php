@@ -59,17 +59,19 @@ use App\Http\Controllers\StoreHouseMovementTypeController;
 Route::post('login', [PassportAuthController::class, 'login']);
 Route::get('enviroments', [UtilitiesController::class, 'enviroments']);
 Route::get('currency-rates-today/{base}', [UtilitiesController::class, 'currency_rates']);
-Route::get('qr-code', function ()
-{
-  return  QRCode::text('Laravel QR Code Generator!')
-  ->setOutfile('./qr/email-qr-code.png')
-  ->png();
-});
+
 Route::get('rooms/getCategoriesStatus', [RoomController::class,'getCategoriesStatus']);
 Route::get('rooms/list', [RoomController::class,'list']);
 Route::get('email/sendmail', [PhpmailerController::class,'email']);
 Route::get('reportecaja/imprimir2', [CashRegisterMovementController::class,'imprimir2']);
 Route::get('cash-register-movements/listar', [CashRegisterMovementController::class,'listar']);
+Route::apiResource('system-configurations', SystemConfigurationController::class);
+Route::post('licencias/searchToken', [SystemConfigurationController::class,'searchToken']);
+Route::post('licencias/validarLicencia', [SystemConfigurationController::class,'validarLicencia']);
+Route::post('licencias/validarUso', [SystemConfigurationController::class,'validarUso']);
+Route::post('licencias/getData', [SystemConfigurationController::class,'getData']);
+Route::get('licencias/searchDocument/{id}', [SystemConfigurationController::class,'searchDocument']);
+
 Route::middleware('auth:api')->group(function(){
 
     Route::apiResource('currencies', CurrencyController::class);
@@ -115,9 +117,6 @@ Route::middleware('auth:api')->group(function(){
     Route::get('listado', [ReservationController::class,'listado']);   
     Route::apiResource('reservations', ReservationController::class);
 
-
-    Route::apiResource('system-configurations', SystemConfigurationController::class)->only(['index', 'store']);
-
     Route::apiResource('roles', RolesController::class);
     Route::apiResource('permissions', PermissionController::class)->only(['index', 'store']);
     Route::apiResource('users', UserController::class);
@@ -132,6 +131,8 @@ Route::middleware('auth:api')->group(function(){
     Route::post('electronic-vouchers/imprimir', [ElectronicVoucherController::class,'imprimir']);
     Route::apiResource('electronic-vouchers', ElectronicVoucherController::class);
     Route::apiResource('electronic-voucher-types', ElectronicVoucherTypeController::class)->only(['index']);
+    Route::get('/electronic-vouchers/cancel/{id}', [ElectronicVoucherController::class,'cancel']);
+    
 
     Route::post('report-rooms', [ReportsController::class, 'rooms']);
     Route::post('report-reservations', [ReportsController::class, 'reservations']);
@@ -141,5 +142,6 @@ Route::middleware('auth:api')->group(function(){
     Route::get('dashboard', [DashboardController::class, 'dashboard']);
     Route::get('data', [DashboardController::class, 'data']);
 
+    
     Route::post('logout', [PassportAuthController::class, 'logout']);
 });

@@ -11,12 +11,19 @@ use Illuminate\Http\Response;
 use App\Models\ReservationRoom;
 use App\Models\ReservationGuest;
 use App\Models\ReservationPayment;
+use App\Models\Sale;
 use Illuminate\Support\Facades\DB;
 use App\Models\CashRegisterMovement;
 use App\Http\Resources\ReservationResource;
 use App\Http\Resources\ReservationsResource;
 use App\Http\Requests\ReservationCreateRequest;
 use App\Http\Requests\ReservationUpdateRequest;
+use App\Models\ProductMovement;
+use App\Models\SaleProduct;
+use App\Models\ServiceProduct;
+use App\Models\SaleService;
+use App\Models\StoreHouse;
+use App\Models\StoreHouseMovement;
 
 class ReservationController extends Controller
 {
@@ -181,7 +188,7 @@ class ReservationController extends Controller
     public function update(ReservationUpdateRequest $request, Reservation $reservation)
     {
         try{
-
+           // dd($reservation);
             $turnChange = TurnChange::where('status_active', '=', true)->first();
             //dd(9);
             DB::beginTransaction();
@@ -237,6 +244,7 @@ class ReservationController extends Controller
                 }
 
                 $this->notifyReservationDeleted($reservation);
+                $this->returnProductWareHouse($reservation->id);
             }
 
             DB::commit();
@@ -259,5 +267,49 @@ class ReservationController extends Controller
         //
     }
 
+
+    public function returnProductWareHouse($id){
+
+        $sale = Sale::Where('reservation_id','=',$id)->first();
+       
+        if($sale){
+
+          
+            $products = SaleProduct::where('sale_id', '=', $sale->id)->get();
+            $services = SaleService::where('sale_id', '=', $sale->id)->get();
+            $storeHouse = StoreHouse::where('is_base', '=', true)->first();
+           
+           
+            $storeHouseMovement = StoreHouseMovement::create([
+                'store_house_id' => $storeHouse->id,
+                'store_house_movement_type_id' => '6',
+                'description' => 'Ingreso de productos por anulación de venta',
+            ]);
+
+            foreach($products as $product){
+                ProductMovement::create([
+                    'product_id' => $product->product_id,
+                    'quantity' => $product->quantity,
+                    'store_house_movement_id' => $storeHouseMovement->id,
+                    'product_movement_type_id' => '5',
+                ]);
+            }
+
+            foreach($services as $service){
+                $serviceProducts = ServiceProduct::where('service_id', '=', $service->service_id)->get();
+                
+                foreach($serviceProducts as $product){
+                    ProductMovement::create([
+                        'product_id' => $product->product_id,
+                        'quantity' => $product->quantity,
+                        'store_house_movement_id' => $storeHouseMovement->id,
+                        'product_movement_type_id' => '5',
+                    ]);
+                }
+            }
+
+        }        
+
+    }
    
 }

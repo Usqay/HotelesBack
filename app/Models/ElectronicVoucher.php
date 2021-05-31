@@ -20,6 +20,8 @@ class ElectronicVoucher extends Model
         'api_response',
         'api_state',
         'adittional_info',
+        'sale_reservation',
+        'sale_reservation_id'
     ];
     
     public function electronic_voucher_type()

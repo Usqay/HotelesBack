@@ -87,6 +87,22 @@ class SystemConfigurationSeeder extends Seeder
             'value' => 0
         ]);
         SystemConfiguration::create([
+            'key' => 'ncf_series',
+            'value' => 'FNC1'
+        ]);
+        SystemConfiguration::create([
+            'key' => 'ncf_auto_increment',
+            'value' => 0
+        ]);
+        SystemConfiguration::create([
+            'key' => 'ncb_series',
+            'value' => 'BNC1'
+        ]);
+        SystemConfiguration::create([
+            'key' => 'ncb_auto_increment',
+            'value' => 0
+        ]);
+        SystemConfiguration::create([
             'key' => 'ballot_printer',
             'value' => ''
         ]);
